@@ -1,12 +1,14 @@
 /*
  * jQuery pressAndHold Plugin 1.0.0
- * https://github.com/
+ * https://github.com/santhony7/pressAndHold
  *
  * Copyright 2013, Tony Smith
  * https://www.naptown.com
  *
  * Licensed under the MIT license:
  * http://www.opensource.org/licenses/MIT
+ * 
+ * Modified by Ari
  */
 ;(function($, window, document, undefined) {
 
@@ -15,8 +17,9 @@
 			holdTime: 700,
 			progressIndicatorRemoveDelay: 300,
 			progressIndicatorColor: "#ff0000",
-			progressIndicatorOpacity: 0.6
-
+			progressIndicatorOpacity: 0.6,
+			clickHoldRepeat: false,
+			showIndicator: true,
 		};
 
 	function Plugin(element, options) {
@@ -34,7 +37,6 @@
 			decaCounter,
 			progressIndicatorHTML;
 
-
 			$(this.element).css({
 				display: 'block',
 				overflow: 'hidden',
@@ -43,17 +45,35 @@
 
 			progressIndicatorHTML = '<div class="holdButtonProgress" style="height: 100%; width: 100%; position: absolute; top: 0; left: -100%; background-color:' + this.settings.progressIndicatorColor + '; opacity:' + this.settings.progressIndicatorOpacity + ';"></div>';
 
-			$(this.element).prepend(progressIndicatorHTML);
+			if (!this.settings.clickHoldRepeat) $(this.element).prepend(progressIndicatorHTML);
 
 			$(this.element).mousedown(function(e) {
+				var holdTime_clickHoldRepeat_minValue = 50;
+				var temporaryHoldTime = _this.settings.holdTime;
+
 				if(e.button != 2){
+					$(_this.element).trigger('clickHoldRepeat.pressAndHold');
 					$(_this.element).trigger('start.pressAndHold');
 					decaCounter = 0;
 					timer = setInterval(function() {
 						decaCounter += 10;
-						$(_this.element).find(".holdButtonProgress").css("left", ((decaCounter / _this.settings.holdTime) * 100 - 100) + "%");
-						if (decaCounter == _this.settings.holdTime) {
-							_this.exitTimer(timer);
+						if (!_this.settings.clickHoldRepeat) $(_this.element).find(".holdButtonProgress").css("left", ((decaCounter / temporaryHoldTime) * 100 - 100) + "%");
+						if (decaCounter == temporaryHoldTime) {
+							if (!_this.settings.clickHoldRepeat) {
+								_this.exitTimer(timer);
+							}
+							else {
+								decaCounter = 0;
+								if (temporaryHoldTime > holdTime_clickHoldRepeat_minValue){
+									if (temporaryHoldTime - holdTime_clickHoldRepeat_minValue < holdTime_clickHoldRepeat_minValue){
+										temporaryHoldTime = holdTime_clickHoldRepeat_minValue;
+									}
+									else{									
+										temporaryHoldTime -= holdTime_clickHoldRepeat_minValue;
+									}
+								}
+							}
+							$(_this.element).trigger('clickHoldRepeat.pressAndHold');
 							$(_this.element).trigger('complete.pressAndHold');
 						}
 					}, 10);
